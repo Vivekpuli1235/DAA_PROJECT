@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🎶 Music Playlist Manager</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="app-card">
+    <h1>🎵 Playlist Manager</h1>
+
+    <div class="form">
+      <input id="songInput" placeholder="Enter song name..." />
+      <button onclick="addSong()">➕ Add</button>
+    </div>
+
+    <div class="playlist">
+      <h3>📃 Playlist</h3>
+      <ul id="songList"></ul>
+    </div>
+
+    <div class="controls">
+      <button onclick="prevSong()">⏮ Previous</button>
+      <button onclick="nextSong()">⏭ Next</button>
+    </div>
+
+    <div class="current">
+      <h3>🎧 Now Playing</h3>
+      <p id="currentSong">No song playing</p>
+    </div>
+  </div>
+
+  <script>
+    async function addSong() {
+      let song = document.getElementById("songInput").value;
+      if (!song) return;
+      const res = await fetch("/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ song })
+      });
+      const data = await res.json();
+      renderSongs(data);
+      document.getElementById("songInput").value = "";
+    }
+
+    async function removeSong(song) {
+      const res = await fetch("/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ song })
+      });
+      const data = await res.json();
+      renderSongs(data);
+    }
+
+    async function nextSong() {
+      const res = await fetch("/next", { method: "POST" });
+      const data = await res.json();
+      document.getElementById("currentSong").textContent = data.current;
+    }
+
+    async function prevSong() {
+      const res = await fetch("/prev", { method: "POST" });
+      const data = await res.json();
+      document.getElementById("currentSong").textContent = data.current;
+    }
+
+    function renderSongs(data) {
+      let list = document.getElementById("songList");
+      list.innerHTML = "";
+      data.songs.forEach(s => {
+        let li = document.createElement("li");
+        li.textContent = s;
+        li.onclick = () => removeSong(s);
+        list.appendChild(li);
+      });
+      document.getElementById("currentSong").textContent = data.current;
+    }
+
+    async function loadSongs() {
+      const res = await fetch("/songs");
+      const data = await res.json();
+      renderSongs(data);
+    }
+
+    loadSongs();
+  </script>
+</body>
+</html>
